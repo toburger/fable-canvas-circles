@@ -3,6 +3,9 @@ module BasicCanvas
 open System
 open Fable.Core.JsInterop
 
+type [<Measure>] radian
+type [<Measure>] degree
+
 type Point = Point of x: float * y: float
 type Circle = Circle of point: Point * radius: float
 type IntersectionTree = Element of Circle * IntersectionTree list
@@ -14,11 +17,11 @@ module List =
         yield x, y
     ]
 
-let rad x =
-    x * Math.PI / 180.
+let radian (degree: float<degree>): float<radian> =
+    degree * Math.PI / 180. * 1.<radian/degree>
 
-let angle (Point (x1, y1)) (Point (x2, y2)) =
-    Math.Atan2(y2 - y1, x2 - x1) * (180. / Math.PI)
+let angle (Point (x1, y1)) (Point (x2, y2)): float<degree> =
+    Math.Atan2(y2 - y1, x2 - x1) * (180.<degree> / Math.PI)
 
 let intersection (Circle (Point (x0, y0), r0)) (Circle (Point (x1, y1), r1)) =
     let dx = x1 - x0
@@ -49,7 +52,7 @@ let getAngles circle1 circle2 =
             let p = Point (a, b)
             let x2 = angle p x
             let y2 = angle p y
-            Point (x2, y2)
+            Point (float x2, float y2)
         get circle1, get circle2)
 
 let hasIntersection circle1 circle2 =
@@ -96,19 +99,19 @@ let rec construct = function
 
 open Fable.Import.Browser
 
-let drawArc (ctx: CanvasRenderingContext2D) (color: string) (Circle(Point (x, y), r) as circle) (sa, ea) =
+let drawArc (ctx: CanvasRenderingContext2D) (color: string) (Circle(Point (x, y), r) as circle) (sa: float<radian>, ea: float<radian>) =
     do
         // cut out everything underneath
         ctx.globalCompositeOperation <- "destination-out"
         ctx.beginPath()
         ctx.fillStyle <- !^"black"
-        ctx.arc(x, y, r, sa, ea)
+        ctx.arc(x, y, r, float sa, float ea)
         ctx.fill()
     do
         ctx.globalCompositeOperation <- "source-over"
         ctx.beginPath()
         ctx.fillStyle <- !^color
-        ctx.arc(x, y, r, sa, ea)
+        ctx.arc(x, y, r, float sa, float ea)
         ctx.fill()
         ctx.lineWidth <- 2.0
         ctx.setLineDash(ResizeArray [|5.; 2.|])
@@ -117,7 +120,7 @@ let drawArc (ctx: CanvasRenderingContext2D) (color: string) (Circle(Point (x, y)
 let drawArcWith ctx color baseCircle circle =
     match getAngles baseCircle circle with
     | Some (_, Point (x, y)) ->
-        let a1, a2 = rad x, rad y
+        let a1, a2 = radian (x * 1.<degree>), radian (y * 1.<degree>)
         drawArc ctx color circle (a2, a1)
     | None -> ()
 
@@ -176,7 +179,7 @@ let init ccircles =
     result
     |> Core.Option.iter (fun (Element (c, subs)) ->
         let circle, color = find c
-        drawArc ctx color circle (0., 360.)
+        drawArc ctx color circle (0.<radian>, radian 360.<degree>)
         List.iter (render circle) subs)
 
 let time1 = performance.now()
