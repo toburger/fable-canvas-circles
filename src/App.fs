@@ -41,26 +41,6 @@ let intersection (Circle (Point (x0, y0), r0)) (Circle (Point (x1, y1), r1)) =
         let yi_prime = y2 - ry
         Some (Point (xi, yi), Point (xi_prime, yi_prime))
 
-// just for fun, let's memoize the intersection function
-module Memoized =
-    let memoize fn =
-        let cache = new System.Collections.Generic.Dictionary<_,_>()
-        fun x ->
-            match cache.TryGetValue (hash x) with
-            | true, v -> v
-            | false, _ ->
-                let v = fn (x)
-                cache.Add(hash x,v)
-                v
-
-    let intersection =
-        let intersection (circle1, circle2) =
-            intersection circle1 circle2
-        let intersection = memoize intersection
-        fun circle1 circle2 -> intersection (circle1, circle2)
-
-open Memoized
-
 let getAngles circle1 circle2 =
     intersection circle1 circle2
     |> Option.map (fun (x, y) ->
