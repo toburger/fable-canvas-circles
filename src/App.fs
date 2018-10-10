@@ -117,13 +117,22 @@ let rec construct = function
 open Fable.Import.Browser
 
 let drawArc (ctx: CanvasRenderingContext2D) (color: string) (Circle(Point (x, y), r) as circle) (sa, ea) =
-    ctx.fillStyle <- !^color
-    ctx.beginPath()
-    ctx.arc(x, y, r, sa, ea)
-    ctx.fill()
-    ctx.lineWidth <- 2.0
-    ctx.setLineDash(ResizeArray [|5.; 2.|])
-    ctx.stroke()
+    do
+        // cut out everything underneath
+        ctx.globalCompositeOperation <- "destination-out"
+        ctx.beginPath()
+        ctx.fillStyle <- !^"black"
+        ctx.arc(x, y, r, sa, ea)
+        ctx.fill()
+    do
+        ctx.globalCompositeOperation <- "source-over"
+        ctx.beginPath()
+        ctx.fillStyle <- !^color
+        ctx.arc(x, y, r, sa, ea)
+        ctx.fill()
+        ctx.lineWidth <- 2.0
+        ctx.setLineDash(ResizeArray [|5.; 2.|])
+        ctx.stroke()
 
 let drawArcWith ctx color baseCircle circle =
     match getAngles baseCircle circle with
@@ -190,12 +199,19 @@ let init ccircles =
         drawArc ctx color circle (0., 360.)
         List.iter (render circle) subs)
 
-let circle1 = Circle (Point (280., 280.), radius = 100.), "red"
-let circle2 = Circle (Point (200., 200.), radius =  70.), "blue"
-let circle3 = Circle (Point (380., 330.), radius =  40.), "green"
-let circle4 = Circle (Point (400., 360.), radius =  40.), "yellow"
-let circle5 = Circle (Point (250., 360.), radius =  50.), "magenta"
-let circle6 = Circle (Point (340., 220.), radius =  60.), "cyan"
+let time1 = performance.now()
 
-let ccircles = [circle1; circle2; circle3; circle4; circle5; circle6]
+let ccircles = [
+    Circle (Point (280., 280.), radius = 100.), "rgba(255, 0, 0, 0.5)" // "red"
+    Circle (Point (200., 200.), radius =  70.), "rgba(0, 0, 255, 0.5)" //"blue"
+    Circle (Point (380., 330.), radius =  40.), "rgba(0, 255, 0, 0.5)" // "green"
+    Circle (Point (400., 360.), radius =  40.), "rgba(255, 255, 0, 0.5)" //"yellow"
+    Circle (Point (250., 360.), radius =  50.), "rgba(255, 0, 255, 0.5)" //"magenta"
+    Circle (Point (340., 220.), radius =  60.), "rgba(0, 255, 255, 0.5)" //"cyan"
+]
+
 init ccircles
+
+let time2 = performance.now()
+
+console.log(sprintf "Time for render: %.0f milliseconds" (time2 - time1))
